@@ -11,22 +11,18 @@ RSpec.describe Product, type: :model do
     it { should belong_to(:category) }
   end
   context 'logic methods' do
-    it 'Strips HTML from description' do
-      category = Category.create!()
-      product = Product.create!(title: 'Test HTML', price: 100, description: '<p>abc</p>', category: category)
+    let!(:product) { create(:product, description: '<p>abcccccccccccccccc</p>', title: 'TEST LOWER' ) }
+    let!(:build_product) { build(:product, description: 'abc')}
 
-      expect(product.description).to eq 'abc'
+    it 'Strips HTML from description' do
+      expect(product.description).to eq 'abcccccccccccccccc'
     end
     it 'Title lowercase after save' do
-      category = Category.create!()
-      product = Product.create!(title: 'TeST LOWER', price: 200, description: 'descriptionabc', category: category)
       expect(product.title).to eq 'test lower'
     end
     it 'Title is shorter than description' do
-      category = Category.create!()
-      product = Product.new(title: 'Longer than description', price: 200, description: 'shorter', category: category)
-      product.validate
-      expect(product.errors.messages).to include(title: ['can\'t longer than description'])
+      build_product.validate
+      expect(build_product.errors.messages).to include(title: ['can\'t longer than description'])
     end
   end
 end

@@ -9,21 +9,24 @@ RSpec.describe ProductsController, type: :controller do
       expect(assigns(:products).size).to eq products.size
       expect(response).to render_template :index
     end
+
     it 'route to index' do
       should route(:get, '/products').to(controller: :products, action: :index)
     end
   end
 
   describe 'GET #show' do
-    let!(:product_individual) { create(:product) }
+    let(:product) { create(:product) }
+    before { get :show, params: { id: product.id } }
+
     it 'gets the product for detail' do
-      get :show, params: { id: product_individual.id }
-      expect(assigns(:product)).to eq product_individual
+      expect(assigns(:product)).to eq product
     end
+
     it 'get the show template' do
-      get :show, params: { id: product_individual.id }
       expect(response).to render_template :show
     end
+
     it 'route to detail pages correctly' do
       should route(:get, '/products/1').to('products#show', id: 1)
     end
@@ -34,6 +37,7 @@ RSpec.describe ProductsController, type: :controller do
       get :new
       expect(response).to render_template :new
     end
+
     it 'route to new page correctly' do
       should route(:get, '/products/new').to('products#new')
     end
@@ -41,7 +45,6 @@ RSpec.describe ProductsController, type: :controller do
 
   describe 'POST #create' do
     let!(:product) { build(:product) }
-    let!(:invalid_product) { build(:product, title: 'this is', description: 'that')}
     context 'with valid attributes' do
       it 'save the new product in database' do
         expect{
@@ -51,8 +54,8 @@ RSpec.describe ProductsController, type: :controller do
       end
 
       it 'redirect to home page' do
-        binding.pry
-        expect(response).to redirect_to :index
+        post :create, params: { product: product.attributes }
+        should redirect_to(action: :index)
       end
     end
 
@@ -60,7 +63,7 @@ RSpec.describe ProductsController, type: :controller do
       it 'does not save' do
         expect{
           post :create,
-          params: { product: invalid_product.attributes }
+          params: { product: { title: 'this is', description: 'that' }}
         }.to_not change(Product, :count)
       end
     end
@@ -68,14 +71,12 @@ RSpec.describe ProductsController, type: :controller do
 
   describe 'GET #edit' do
     let!(:product) { create(:product) }
-
+    before { get :edit, params: { id: product.id } }
     it 'get correct product for editing' do
-      put :edit, params: { id: product.id }
       expect(assigns(:product)).to eq product
     end
 
     it 'get the edit template' do
-      get :edit, params: { id: product.id }
       expect(response).to render_template :edit
     end
 
@@ -86,19 +87,16 @@ RSpec.describe ProductsController, type: :controller do
 
   describe 'PUT #update' do
     let!(:product) { create(:product, title: 'test update') }
-
+    before{ put :update, params: { id: product.id, product: attributes_for(:product, title: 'updated')} }
     it 'update successfully' do
-      put :edit, params: { id: product.id, product: attributes_for(:product, title: 'updated')}
       product.reload
-
     end
     it 'route to update correctly' do
-      should route(:patch, '/products/1').to('products#update', id: 1)
+      should route(:put, '/products/1').to('products#update', id: 1)
     end
 
     it 'redirect detail page' do
-      put :edit, params: { id: product.id, product: attributes_for(:product, title: 'updated')}
-      expect(response).to redirect_to action: :show, id: 1
+      should redirect_to action: :index
     end
   end
 
@@ -113,7 +111,7 @@ RSpec.describe ProductsController, type: :controller do
 
     it 'redirect back to index after delete' do
       delete :destroy, params: { id: 1 }
-      expect(response).to redirect_to products_path
+      should redirect_to action: :index
     end
   end
 
